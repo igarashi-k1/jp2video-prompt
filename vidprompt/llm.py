@@ -9,7 +9,7 @@ import urllib.request
 from typing import Any
 
 BACKENDS = ("ollama", "lmstudio")
-DEFAULT_BACKEND = os.environ.get("VIDPROMPT_BACKEND", "ollama")
+DEFAULT_BACKEND = os.environ.get("VIDPROMPT_BACKEND") or "lmstudio"
 DEFAULT_HOSTS = {
     "ollama": os.environ.get("OLLAMA_HOST", "http://localhost:11434"),
     "lmstudio": os.environ.get("LMSTUDIO_HOST", "http://localhost:1234"),

@@ -4,7 +4,7 @@
   vidprompt "夕暮れの海辺を走る柴犬"
   vidprompt -t sora -d 8 -a 16:9 "雨の東京の交差点を俯瞰で"
   echo "桜並木を歩く少女" | vidprompt --json
-  vidprompt -b lmstudio "夜の港町"  # LM Studio を使用
+  vidprompt -b ollama "夜の港町"    # Ollama を使用
   vidprompt --serve            # ブラウザUIを起動
 """
 
@@ -21,7 +21,7 @@ from .targets import TARGETS
 
 
 def build_parser() -> argparse.ArgumentParser:
-    p = argparse.ArgumentParser(prog="vidprompt", description="日本語 → 英語の動画生成プロンプト (ローカルLLM: Ollama / LM Studio)")
+    p = argparse.ArgumentParser(prog="vidprompt", description="日本語 → 英語の動画生成プロンプト (ローカルLLM: LM Studio / Ollama)")
     p.add_argument("text", nargs="?", help="日本語のシーン説明 (省略時は標準入力)")
     p.add_argument("-t", "--target", default="generic", choices=list(TARGETS), help="出力先の動画生成AI")
     p.add_argument("-d", "--duration", type=int, help="動画の長さ (秒)")
@@ -29,8 +29,8 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("-s", "--style", help="スタイル指定 (例: anime, film noir, ドキュメンタリー風)")
     p.add_argument("-b", "--backend", default=DEFAULT_BACKEND, choices=BACKENDS,
                    help=f"ローカルLLMの種類 (既定: {DEFAULT_BACKEND})")
-    p.add_argument("-m", "--model", help="モデル名 (既定: Ollama は qwen2.5:7b、LM Studio は読み込み中のモデル)")
-    p.add_argument("--host", help="サーバーURL (既定: Ollama http://localhost:11434 / LM Studio http://localhost:1234)")
+    p.add_argument("-m", "--model", help="モデル名 (既定: LM Studio は読み込み中のモデル、Ollama は qwen2.5:7b)")
+    p.add_argument("--host", help="サーバーURL (既定: LM Studio http://localhost:1234 / Ollama http://localhost:11434)")
     p.add_argument("--json", action="store_true", help="JSON で出力")
     p.add_argument("--serve", action="store_true", help="Web UI を起動")
     p.add_argument("--port", type=int, default=7860, help="Web UI のポート")
