@@ -7,7 +7,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from importlib import resources
 
 from .core import ChatModel, generate
-from .ollama_client import OllamaError
+from .llm import LLMError
 from .targets import TARGETS
 
 
@@ -47,7 +47,7 @@ def make_handler(model: ChatModel):
                     style_hint=req.get("style") or None,
                 )
                 self._json(200, r.to_dict())
-            except OllamaError as e:
+            except LLMError as e:
                 self._json(502, {"error": str(e)})
             except (ValueError, json.JSONDecodeError) as e:
                 self._json(400, {"error": str(e)})
