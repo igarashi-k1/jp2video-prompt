@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>動画プロンプト生成</title>
+<style>
+  :root { --bg:#f7f7f8; --fg:#1d1d1f; --card:#fff; --line:#ddd; --accent:#2f6fed; --muted:#666; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#151517; --fg:#ececee; --card:#1f1f23; --line:#333; --accent:#6d9bff; --muted:#999; }
+  }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--fg); font:15px/1.6 system-ui, "Hiragino Sans", "Noto Sans JP", sans-serif; }
+  main { max-width: 860px; margin: 0 auto; padding: 24px 16px 48px; }
+  h1 { font-size: 22px; margin: 0 0 16px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:16px; margin-bottom:16px; }
+  textarea, input, select { width:100%; font:inherit; color:inherit; background:transparent; border:1px solid var(--line); border-radius:6px; padding:8px; }
+  textarea { min-height: 120px; resize: vertical; }
+  .row { display:grid; grid-template-columns: repeat(auto-fit, minmax(150px,1fr)); gap:10px; margin-top:10px; }
+  label { font-size:12px; color:var(--muted); display:block; margin-bottom:2px; }
+  button { margin-top:12px; background:var(--accent); color:#fff; border:0; border-radius:6px; padding:10px 18px; font:inherit; cursor:pointer; }
+  button:disabled { opacity:.5; cursor:wait; }
+  h2 { font-size:14px; margin:0 0 6px; color:var(--muted); display:flex; justify-content:space-between; align-items:center; }
+  h2 button { margin:0; padding:2px 10px; font-size:12px; background:transparent; color:var(--accent); border:1px solid var(--accent); }
+  pre { white-space: pre-wrap; margin:0; font: inherit; }
+  dl { display:grid; grid-template-columns: 90px 1fr; gap:4px 12px; margin:0; }
+  dt { color:var(--muted); font-size:13px; }
+  dd { margin:0; }
+  .err { color:#d33; }
+  #out { display:none; }
+</style>
+</head>
+<body>
+<main>
+  <h1>日本語 → 動画生成プロンプト</h1>
+  <div class="card">
+    <label for="text">シーンの説明 (日本語)</label>
+    <textarea id="text" placeholder="例: 夕暮れの海辺を柴犬が楽しそうに走っている。カメラは横から追いかける。"></textarea>
+    <div class="row">
+      <div><label for="target">出力先</label><select id="target"></select></div>
+      <div><label for="duration">長さ (秒)</label><input id="duration" type="number" min="1" max="60" placeholder="任意"></div>
+      <div><label for="aspect">アスペクト比</label>
+        <select id="aspect"><option value="">指定なし</option><option>16:9</option><option>9:16</option><option>1:1</option><option>21:9</option></select></div>
+      <div><label for="style">スタイル</label><input id="style" placeholder="例: アニメ調, 35mm film"></div>
+    </div>
+    <button id="go">生成 (Ctrl+Enter)</button>
+    <div id="msg"></div>
+  </div>
+  <div id="out">
+    <div class="card"><h2>動画プロンプト <button data-copy="prompt">コピー</button></h2><pre id="prompt"></pre></div>
+    <div class="card" id="negCard"><h2>ネガティブプロンプト <button data-copy="neg">コピー</button></h2><pre id="neg"></pre></div>
+    <div class="card"><h2>英訳</h2><pre id="english"></pre></div>
+    <div class="card"><h2>要素</h2><dl id="elements"></dl></div>
+  </div>
+</main>
+<script>
+const $ = (id) => document.getElementById(id);
+fetch("/api/targets").then(r => r.json()).then(ts => {
+  $("target").innerHTML = ts.map(t => `<option value="${t.key}">${t.label}</option>`).join("");
+});
+async function run() {
+  const text = $("text").value.trim();
+  if (!text) return;
+  $("go").disabled = true; $("msg").textContent = "生成中…"; $("msg").className = "";
+  try {
+    const res = await fetch("/api/generate", { method: "POST", headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({ text, target: $("target").value, duration: $("duration").value,
+                             aspect: $("aspect").value, style: $("style").value }) });
+    const d = await res.json();
+    if (!res.ok) throw new Error(d.error || res.statusText);
+    $("prompt").textContent = d.prompt;
+    $("neg").textContent = d.negative_prompt;
+    $("negCard").style.display = d.negative_prompt ? "" : "none";
+    $("english").textContent = d.english;
+    $("elements").innerHTML = "";
+    for (const [k, v] of Object.entries(d.elements)) {
+      const dt = document.createElement("dt"); dt.textContent = k;
+      const dd = document.createElement("dd"); dd.textContent = v;
+      $("elements").append(dt, dd);
+    }
+    $("out").style.display = "block"; $("msg").textContent = "";
+  } catch (e) {
+    $("msg").textContent = "エラー: " + e.message; $("msg").className = "err";
+  } finally { $("go").disabled = false; }
+}
+$("go").onclick = run;
+$("text").addEventListener("keydown", e => { if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) run(); });
+document.querySelectorAll("[data-copy]").forEach(b => b.onclick = () => {
+  navigator.clipboard.writeText($(b.dataset.copy).textContent);
+  b.textContent = "コピー済"; setTimeout(() => b.textContent = "コピー", 1200);
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "jp2video-prompt"
+version = "0.1.0"
+description = "日本語の説明を英語の動画生成プロンプトに変換するローカルAI (Ollama)"
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = []
+
+[project.scripts]
+vidprompt = "vidprompt.cli:main"
+
+[tool.setuptools]
+packages = ["vidprompt"]
+
+[tool.setuptools.package-data]
+vidprompt = ["static/*.html"]
